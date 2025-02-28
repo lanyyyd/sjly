@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
+<script>LA.init({id:"3LP7OhF4PhGNp9zj",ck:"3LP7OhF4PhGNp9zj"})</script>
+    <title>专属留言</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #message {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #loading {
+            font-size: 1.2em;
+            color: #666;
+            display: none; /* 初始隐藏 */
+        }
+        #result {
+            display: none; /* 初始隐藏 */
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #startButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="message">
+        <button id="startButton">点我抽取</button>
+        <div id="loading">正在抽取留言...</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 设备UA检测
+        const ua = navigator.userAgent;
+        const isTargetDevice = /(iOS18\.0\.1|Windows NT 10\.0; Win64; x64)/i.test(ua);
+
+        // 备选留言列表
+        const messages = [
+            "天天开心.",
+            "永远相信美好的事情即将发生.",
+            "生活就像一盒巧克力，你永远不知道下一颗是什么味道。",
+            "保持好奇心，探索世界的每一个角落。",
+            "愿你拥有美好的一天！",
+            "努力成为更好的自己！",
+        ];
+
+        // 随机抽取一条留言
+        function getRandomMessage() {
+            const randomIndex = Math.floor(Math.random() * messages.length); // 生成随机索引
+            return messages[randomIndex]; // 返回随机留言
+        }
+
+        // 判断是否为第一次访问
+        function isFirstVisit() {
+            const visited = localStorage.getItem('visited');
+            if (!visited) {
+                localStorage.setItem('visited', 'true'); // 标记为已访问
+                return true; // 第一次访问
+            }
+            return false; // 非第一次访问
+        }
+
+        // 按概率显示“你喜欢我吗？”
+        function showSpecialMessage() {
+            const probability = 0.2; // 20% 的概率显示“你喜欢我吗？”
+            return Math.random() < probability; // 随机决定是否显示
+        }
+
+        // IP地理位置检测
+        function checkLocation() {
+            const timeout = 5000; // 设置超时时间为5秒
+
+            Promise.race([
+                fetch('https://ipapi.co/json/'),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('请求超时')), timeout)
+                )
+            ])
+                .then(response => response.json())
+                .then(data => {
+                    const isShandong = data.region === 'Shandong'; // 判断是否为山东用户
+                    const userRegion = isShandong ? '山东' : data.region; // 获取用户地区
+                    showCustomMessage(isShandong, isTargetDevice, userRegion);
+                })
+                .catch(error => {
+                    showCustomMessage(false, false, '未知地区'); // API调用失败或超时时显示通用信息
+                });
+        }
+
+        // 显示对应信息
+        function showCustomMessage(isShandong, isTargetDevice, userRegion) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            if (isShandong && isTargetDevice) {
+                if (isFirstVisit()) {
+                    // 第一次访问，显示“你喜欢我吗？”
+                    result.innerHTML = '你喜欢我吗？❤️';
+                    result.style.color = '#ff1493';
+                    result.style.fontSize = '2em';
+                } else if (showSpecialMessage()) {
+                    // 非第一次访问，按概率显示“你喜欢我吗？”
+                    result.innerHTML = '你喜欢我吗？❤️';
+                    result.style.color = '#ff1493';
+                    result.style.fontSize = '2em';
+                } else {
+                    // 显示随机留言
+                    const randomMessage = getRandomMessage();
+                    result.innerHTML = randomMessage;
+                    result.style.color = '#333';
+                }
+            } else {
+                // 不符合条件的用户，显示随机留言
+                const randomMessage = getRandomMessage();
+                result.innerHTML = randomMessage;
+                result.style.color = '#333';
+            }
+
+            // 隐藏加载状态，显示结果
+            loading.style.display = 'none';
+            result.style.display = 'block';
+        }
+
+        // 初始化按钮点击事件
+        document.getElementById('startButton').addEventListener('click', function() {
+            const startButton = document.getElementById('startButton');
+            const loading = document.getElementById('loading');
+
+            // 隐藏按钮，显示加载状态
+            startButton.style.display = 'none';
+            loading.style.display = 'block';
+
+            // 延迟1秒后执行检测
+            setTimeout(() => {
+                checkLocation(); // 开始检测
+            }, 1000); // 延迟1秒
+        });
+    </script>
+</body>
+</html>
